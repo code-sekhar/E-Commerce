@@ -16,11 +16,11 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next,...$roles): Response
     {
         if(!auth()->check()){
-            return redirect('/login');
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
         $userRole = auth()->user()->role;
         if(!in_array($userRole,$roles)){
-            abort(403,'Unauthorized action.');
+            return response()->json(['message' => 'Forbidden'], 403);
         }
         return $next($request);
     }
