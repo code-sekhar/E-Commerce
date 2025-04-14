@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth:sanctum' => EnsureFrontendRequestsAreStateful::class
         ]);
         $middleware->validateCsrfTokens(except: [
-            '/register','/login'
+            '/register','/login','/category'
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

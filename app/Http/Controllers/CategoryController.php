@@ -18,14 +18,12 @@ class CategoryController extends Controller
                 'name' => 'required|unique:categories',
                 'description' => 'required',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'status' => 'required',
             ],[
                 'name.required' => 'Name is required',
                 'description.required' => 'Description is required',
                 'image.image' => 'Image must be an image',
                 'image.mimes' => 'Image must be a file of type: jpeg, png, jpg, gif, svg',
                 'image.max' => 'Image size must not exceed 2MB',
-                'status.required' => 'Status is required',
             ]);
             $imagePath = null;
             if ($request->hasFile('image')) {
@@ -40,7 +38,6 @@ class CategoryController extends Controller
                 'slug' => $slug,
                 'description' => $request->description,
                 'image' => $imagePath,
-                'status' => $request->status,
                 'user_id' => $authUse_id
             ]);
 
@@ -69,6 +66,79 @@ class CategoryController extends Controller
                 'message' => 'Categories retrieved successfully',
                 'categories' => $categories,
             ],201);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    //update category
+    public function update(Request $request, $id) {
+        try{
+            $authUse_id = auth()->user()->id;
+
+            $category = Category::where('id', $id)->where('user_id', $authUse_id)->first();
+            if (!$category) {
+                return response()->json([
+                    'message' => 'Category not found'
+                ], 404);
+            }
+            $request->validate([
+                'name' => 'required',
+                'description' => 'required',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ],[
+                'name.required' => 'Name is required',
+                'description.required' => 'Description is required',
+                'image.image' => 'Image must be an image',
+                'image.mimes' => 'Image must be a file of type: jpeg, png, jpg, gif, svg',
+                'image.max' => 'Image size must not exceed 2MB',
+            ]);
+            $imagePath = $category->image;
+            if ($request->hasFile('image')) {
+                //old image
+                if($category->image && file_exists(public_path('uploads/categories/'.$category->image))){
+                    unlink(public_path('uploads/categories/'.$category->image));
+                }
+                $image = $request->file('image');
+                $imagePath = $image->store('categories', 'public');
+
+            }
+            $slug = Str::slug($request->name);
+            $category->update([
+                'name' => $request->name,
+                'slug' => $slug,
+                'description' => $request->description,
+                'image' => $imagePath,
+            ]);
+            return response()->json([
+                'message' => 'Category updated successfully',
+                'category' => $category
+            ], 200);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    //delete category
+    public function destroy($id) {
+        try{
+            $authUse_id = auth()->user()->id;
+
+            $category = Category::where('id', $id)->where('user_id', $authUse_id)->first();
+            if (!$category) {
+                return response()->json([
+                    'message' => 'Category not found'
+                ], 404);
+            }
+            if($category->image && file_exists(public_path('uploads/categories/'.$category->image))){
+                unlink(public_path('uploads/categories/'.$category->image));
+            }
+            $category->delete();
+            return response()->json([
+                'message' => 'Category deleted successfully'
+            ], 200);
         }catch(Exception $e){
             return response()->json([
                 'message' => $e->getMessage()
